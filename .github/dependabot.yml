@@ -23,6 +23,10 @@ updates:
       interval: weekly
     cooldown:
       default-days: 7
+    # Stay on the Java 21 LTS line: non-LTS majors (e.g. 24) are only supported for six months
+    ignore:
+      - dependency-name: eclipse-temurin
+        update-types: ["version-update:semver-major"]
     labels: [dependencies, docker]
 
   - package-ecosystem: docker-compose

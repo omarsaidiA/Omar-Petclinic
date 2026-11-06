@@ -231,9 +231,10 @@ jobs:
         run: |
           mkdir -p zap-out && chmod 777 zap-out
           set +e
+          # -port 8090: on the host network, ZAP's default proxy port 8080 is already taken by Keycloak
           docker run --rm --network host -v "$PWD/.zap:/zap/plan:ro" -v "$PWD/zap-out:/zap/wrk" \
             -e ZAP_TARGET=http://localhost:9966/petclinic "$ZAP_IMAGE" \
-            zap.sh -cmd \
+            zap.sh -cmd -port 8090 \
               -config 'replacer.full_list(0).description=auth' \
               -config 'replacer.full_list(0).enabled=true' \
               -config 'replacer.full_list(0).matchtype=REQ_HEADER' \
