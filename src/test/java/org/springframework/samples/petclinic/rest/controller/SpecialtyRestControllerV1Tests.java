@@ -90,7 +90,7 @@ class SpecialtyRestControllerV1Tests {
     }
 
     @Test
-    @WithMockUser(roles="VET_ADMIN")
+    @WithMockUser(roles = "ADMIN")
     void testGetSpecialtySuccess() throws Exception {
     	given(this.clinicService.findSpecialtyById(1)).willReturn(specialties.get(0));
         this.mockMvc.perform(get("/api/specialties/1")
@@ -102,7 +102,7 @@ class SpecialtyRestControllerV1Tests {
     }
 
     @Test
-    @WithMockUser(roles="VET_ADMIN")
+    @WithMockUser(roles = "ADMIN")
     void testGetSpecialtyNotFound() throws Exception {
     	given(this.clinicService.findSpecialtyById(999)).willReturn(null);
         this.mockMvc.perform(get("/api/specialties/999")
@@ -111,7 +111,7 @@ class SpecialtyRestControllerV1Tests {
     }
 
     @Test
-    @WithMockUser(roles="VET_ADMIN")
+    @WithMockUser(roles = "ADMIN")
     void testGetAllSpecialtysSuccess() throws Exception {
     	specialties.remove(0);
     	given(this.clinicService.findAllSpecialties()).willReturn(specialties);
@@ -126,7 +126,7 @@ class SpecialtyRestControllerV1Tests {
     }
 
     @Test
-    @WithMockUser(roles="VET_ADMIN")
+    @WithMockUser(roles = "ADMIN")
     void testGetAllSpecialtysNotFound() throws Exception {
     	specialties.clear();
     	given(this.clinicService.findAllSpecialties()).willReturn(specialties);
@@ -136,7 +136,7 @@ class SpecialtyRestControllerV1Tests {
     }
 
     @Test
-    @WithMockUser(roles="VET_ADMIN")
+    @WithMockUser(roles = "ADMIN")
     void testCreateSpecialtySuccess() throws Exception {
     	Specialty newSpecialty = specialties.get(0);
     	newSpecialty.setId(999);
@@ -148,7 +148,7 @@ class SpecialtyRestControllerV1Tests {
     }
 
     @Test
-    @WithMockUser(roles="VET_ADMIN")
+    @WithMockUser(roles = "ADMIN")
     void testCreateSpecialtyError() throws Exception {
     	Specialty newSpecialty = specialties.get(0);
     	newSpecialty.setId(null);
@@ -161,7 +161,7 @@ class SpecialtyRestControllerV1Tests {
      }
 
     @Test
-    @WithMockUser(roles="VET_ADMIN")
+    @WithMockUser(roles = "ADMIN")
     void testUpdateSpecialtySuccess() throws Exception {
     	given(this.clinicService.findSpecialtyById(2)).willReturn(specialties.get(1));
     	Specialty newSpecialty = specialties.get(1);
@@ -182,7 +182,7 @@ class SpecialtyRestControllerV1Tests {
     }
 
     @Test
-    @WithMockUser(roles="VET_ADMIN")
+    @WithMockUser(roles = "ADMIN")
     void testUpdateSpecialtyError() throws Exception {
     	Specialty newSpecialty = specialties.get(0);
     	newSpecialty.setName("");
@@ -194,7 +194,7 @@ class SpecialtyRestControllerV1Tests {
      }
 
     @Test
-    @WithMockUser(roles="VET_ADMIN")
+    @WithMockUser(roles = "ADMIN")
     void testDeleteSpecialtySuccess() throws Exception {
     	Specialty newSpecialty = specialties.get(0);
     	ObjectMapper mapper = new ObjectMapper();
@@ -206,7 +206,7 @@ class SpecialtyRestControllerV1Tests {
     }
 
     @Test
-    @WithMockUser(roles="VET_ADMIN")
+    @WithMockUser(roles = "ADMIN")
     void testDeleteSpecialtyError() throws Exception {
     	Specialty newSpecialty = specialties.get(0);
     	ObjectMapper mapper = new ObjectMapper();

@@ -27,6 +27,8 @@ import io.swagger.v3.oas.models.OpenAPI;
 import io.swagger.v3.oas.models.info.Contact;
 import io.swagger.v3.oas.models.info.Info;
 import io.swagger.v3.oas.models.info.License;
+import io.swagger.v3.oas.models.security.SecurityRequirement;
+import io.swagger.v3.oas.models.security.SecurityScheme;
 
 /**
  * Java config for springdoc-openapi API documentation library
@@ -36,17 +38,24 @@ import io.swagger.v3.oas.models.info.License;
 @Configuration
 public class SwaggerConfig {
 
+    private static final String BEARER_SCHEME = "bearer-jwt";
+
     @Bean
     OpenAPI customOpenAPI() {
         return new OpenAPI()
-            .components(new Components())
+            .components(new Components()
+                .addSecuritySchemes(BEARER_SCHEME, new SecurityScheme()
+                    .type(SecurityScheme.Type.HTTP)
+                    .scheme("bearer")
+                    .bearerFormat("JWT")))
+            .addSecurityItem(new SecurityRequirement().addList(BEARER_SCHEME))
             .info(new Info()
                 .title("omar-petclinic API documentation")
                 .version("1.0")
                 .termsOfService("https://github.com/spring-petclinic/spring-petclinic-rest/blob/master/terms.txt")
                 .description(
-                    "This is the REST API documentation of the Spring Petclinic backend. " +
-                        "If authentication is enabled, use admin/admin when calling the APIs")
+                    "REST API of omar-petclinic, based on the Spring Petclinic backend. " +
+                        "Every endpoint requires a Keycloak access token (realm omar-petclinic) sent as a Bearer token.")
                 .license(swaggerLicense())
                 .contact(swaggerContact()));
     }

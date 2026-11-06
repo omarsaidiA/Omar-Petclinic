@@ -94,7 +94,7 @@ public class V2RestControllersTests {
     }
 
     @Test
-    @WithMockUser(roles = "OWNER_ADMIN")
+    @WithMockUser(roles = "ADMIN")
     void testGetOwnersPageSuccess() throws Exception {
         var pageRequest = PageRequest.of(0, 2, Sort.by("id"));
         var pageOwners = ownerMapper.toOwners(owners.subList(0, 2)).stream().toList();
@@ -115,7 +115,7 @@ public class V2RestControllersTests {
     }
 
     @Test
-    @WithMockUser(roles = "OWNER_ADMIN")
+    @WithMockUser(roles = "ADMIN")
     void testGetPetsPageSuccess() throws Exception {
         var pageRequest = PageRequest.of(0, 5, Sort.by("id"));
         var pagePets = petMapper.toPets(pets).stream().toList();

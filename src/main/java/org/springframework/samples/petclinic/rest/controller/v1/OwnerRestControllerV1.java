@@ -37,7 +37,6 @@ import org.springframework.samples.petclinic.rest.dto.VisitDto;
 import org.springframework.samples.petclinic.rest.dto.VisitFieldsDto;
 import org.springframework.samples.petclinic.service.ClinicService;
 import org.springframework.security.access.prepost.PreAuthorize;
-import org.springframework.web.bind.annotation.CrossOrigin;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.util.UriComponentsBuilder;
@@ -49,7 +48,6 @@ import jakarta.transaction.Transactional;
  */
 
 @RestController
-@CrossOrigin(exposedHeaders = "errors, content-type")
 @RequestMapping("/api")
 public class OwnerRestControllerV1 implements OwnersApi {
 
@@ -71,7 +69,7 @@ public class OwnerRestControllerV1 implements OwnersApi {
         this.visitMapper = visitMapper;
     }
 
-    @PreAuthorize("hasRole(@roles.OWNER_ADMIN)")
+    @PreAuthorize("hasAnyRole(@roles.ADMIN, @roles.VET)")
     @Override
     public ResponseEntity<List<OwnerDto>> listOwners(String lastName) {
         Collection<Owner> owners;
@@ -86,7 +84,7 @@ public class OwnerRestControllerV1 implements OwnersApi {
         return new ResponseEntity<>(ownerMapper.toOwnerDtoCollection(owners), HttpStatus.OK);
     }
 
-    @PreAuthorize("hasRole(@roles.OWNER_ADMIN)")
+    @PreAuthorize("hasAnyRole(@roles.ADMIN, @roles.VET) or (hasRole(@roles.OWNER) and @ownership.isOwner(authentication, #ownerId))")
     @Override
     public ResponseEntity<OwnerDto> getOwner(Integer ownerId) {
         Owner owner = this.clinicService.findOwnerById(ownerId);
@@ -96,7 +94,7 @@ public class OwnerRestControllerV1 implements OwnersApi {
         return new ResponseEntity<>(ownerMapper.toOwnerDto(owner), HttpStatus.OK);
     }
 
-    @PreAuthorize("hasRole(@roles.OWNER_ADMIN)")
+    @PreAuthorize("hasRole(@roles.ADMIN)")
     @Override
     public ResponseEntity<OwnerDto> addOwner(OwnerFieldsDto ownerFieldsDto) {
         HttpHeaders headers = new HttpHeaders();
@@ -108,7 +106,7 @@ public class OwnerRestControllerV1 implements OwnersApi {
         return new ResponseEntity<>(ownerDto, headers, HttpStatus.CREATED);
     }
 
-    @PreAuthorize("hasRole(@roles.OWNER_ADMIN)")
+    @PreAuthorize("hasRole(@roles.ADMIN)")
     @Override
     public ResponseEntity<OwnerDto> updateOwner(Integer ownerId, OwnerFieldsDto ownerFieldsDto) {
         Owner currentOwner = this.clinicService.findOwnerById(ownerId);
@@ -124,7 +122,7 @@ public class OwnerRestControllerV1 implements OwnersApi {
         return new ResponseEntity<>(ownerMapper.toOwnerDto(currentOwner), HttpStatus.NO_CONTENT);
     }
 
-    @PreAuthorize("hasRole(@roles.OWNER_ADMIN)")
+    @PreAuthorize("hasRole(@roles.ADMIN)")
     @Transactional
     @Override
     public ResponseEntity<OwnerDto> deleteOwner(Integer ownerId) {
@@ -136,7 +134,7 @@ public class OwnerRestControllerV1 implements OwnersApi {
         return new ResponseEntity<>(HttpStatus.NO_CONTENT);
     }
 
-    @PreAuthorize("hasRole(@roles.OWNER_ADMIN)")
+    @PreAuthorize("hasRole(@roles.ADMIN)")
     @Override
     public ResponseEntity<PetDto> addPetToOwner(Integer ownerId, PetFieldsDto petFieldsDto) {
         Owner owner = this.clinicService.findOwnerById(ownerId);
@@ -155,7 +153,7 @@ public class OwnerRestControllerV1 implements OwnersApi {
         return new ResponseEntity<>(petDto, headers, HttpStatus.CREATED);
     }
 
-    @PreAuthorize("hasRole(@roles.OWNER_ADMIN)")
+    @PreAuthorize("hasRole(@roles.ADMIN)")
     @Override
     public ResponseEntity<Void> updateOwnersPet(Integer ownerId, Integer petId, PetFieldsDto petFieldsDto) {
         Owner currentOwner = this.clinicService.findOwnerById(ownerId);
@@ -172,7 +170,7 @@ public class OwnerRestControllerV1 implements OwnersApi {
         return new ResponseEntity<>(HttpStatus.NOT_FOUND);
     }
 
-    @PreAuthorize("hasRole(@roles.OWNER_ADMIN)")
+    @PreAuthorize("hasAnyRole(@roles.ADMIN, @roles.VET)")
     @Override
     public ResponseEntity<VisitDto> addVisitToOwner(Integer ownerId, Integer petId, VisitFieldsDto visitFieldsDto) {
         HttpHeaders headers = new HttpHeaders();
@@ -188,7 +186,7 @@ public class OwnerRestControllerV1 implements OwnersApi {
     }
 
 
-    @PreAuthorize("hasRole(@roles.OWNER_ADMIN)")
+    @PreAuthorize("hasAnyRole(@roles.ADMIN, @roles.VET) or (hasRole(@roles.OWNER) and @ownership.isOwner(authentication, #ownerId))")
     @Override
     public ResponseEntity<PetDto> getOwnersPet(Integer ownerId, Integer petId) {
         Owner owner = this.clinicService.findOwnerById(ownerId);

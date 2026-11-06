@@ -57,6 +57,10 @@ services:
       POSTGRES_URL: jdbc:postgresql://postgres:5432/petclinic
       POSTGRES_USER: ${POSTGRES_USER:-petclinic}
       POSTGRES_PASS: ${POSTGRES_PASSWORD:?POSTGRES_PASSWORD is required (see .env.example)}
+      # Tokens are issued for http://localhost:8080 (KC_HOSTNAME); signing keys are fetched over the internal network
+      KEYCLOAK_ISSUER_URI: http://localhost:8080/realms/omar-petclinic
+      KEYCLOAK_JWK_SET_URI: http://keycloak:8080/realms/omar-petclinic/protocol/openid-connect/certs
+      CORS_ALLOWED_ORIGINS: ${CORS_ALLOWED_ORIGINS:-}
     depends_on:
       postgres:
         condition: service_healthy

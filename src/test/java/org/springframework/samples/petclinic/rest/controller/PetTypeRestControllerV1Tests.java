@@ -95,7 +95,7 @@ class PetTypeRestControllerV1Tests {
     }
 
     @Test
-    @WithMockUser(roles="OWNER_ADMIN")
+    @WithMockUser(roles = "ADMIN")
     void testGetPetTypeSuccessAsOwnerAdmin() throws Exception {
     	given(this.clinicService.findPetTypeById(1)).willReturn(petTypes.get(0));
         this.mockMvc.perform(get("/api/pettypes/1")
@@ -107,7 +107,7 @@ class PetTypeRestControllerV1Tests {
     }
 
     @Test
-    @WithMockUser(roles="VET_ADMIN")
+    @WithMockUser(roles = "ADMIN")
     void testGetPetTypeSuccessAsVetAdmin() throws Exception {
         given(this.clinicService.findPetTypeById(1)).willReturn(petTypes.get(0));
         this.mockMvc.perform(get("/api/pettypes/1")
@@ -119,7 +119,7 @@ class PetTypeRestControllerV1Tests {
     }
 
     @Test
-    @WithMockUser(roles="OWNER_ADMIN")
+    @WithMockUser(roles = "ADMIN")
     void testGetPetTypeNotFound() throws Exception {
     	given(this.clinicService.findPetTypeById(999)).willReturn(null);
         this.mockMvc.perform(get("/api/pettypes/999")
@@ -128,7 +128,7 @@ class PetTypeRestControllerV1Tests {
     }
 
     @Test
-    @WithMockUser(roles="OWNER_ADMIN")
+    @WithMockUser(roles = "ADMIN")
     void testGetAllPetTypesSuccessAsOwnerAdmin() throws Exception {
     	petTypes.remove(0);
     	petTypes.remove(1);
@@ -144,7 +144,7 @@ class PetTypeRestControllerV1Tests {
     }
 
     @Test
-    @WithMockUser(roles="VET_ADMIN")
+    @WithMockUser(roles = "ADMIN")
     void testGetAllPetTypesSuccessAsVetAdmin() throws Exception {
         petTypes.remove(0);
         petTypes.remove(1);
@@ -160,7 +160,7 @@ class PetTypeRestControllerV1Tests {
     }
 
     @Test
-    @WithMockUser(roles="VET_ADMIN")
+    @WithMockUser(roles = "ADMIN")
     void testGetAllPetTypesNotFound() throws Exception {
     	petTypes.clear();
     	given(this.clinicService.findAllPetTypes()).willReturn(petTypes);
@@ -170,7 +170,7 @@ class PetTypeRestControllerV1Tests {
     }
 
     @Test
-    @WithMockUser(roles="VET_ADMIN")
+    @WithMockUser(roles = "ADMIN")
     void testCreatePetTypeSuccess() throws Exception {
     	PetType newPetType = petTypes.get(0);
     	newPetType.setId(null);
@@ -182,7 +182,7 @@ class PetTypeRestControllerV1Tests {
     }
 
     @Test
-    @WithMockUser(roles="VET_ADMIN")
+    @WithMockUser(roles = "ADMIN")
     void testCreatePetTypeError() throws Exception {
     	PetType newPetType = petTypes.get(0);
     	newPetType.setId(null);
@@ -195,7 +195,7 @@ class PetTypeRestControllerV1Tests {
      }
 
     @Test
-    @WithMockUser(roles="VET_ADMIN")
+    @WithMockUser(roles = "ADMIN")
     void testUpdatePetTypeSuccess() throws Exception {
     	given(this.clinicService.findPetTypeById(2)).willReturn(petTypes.get(1));
     	PetType newPetType = petTypes.get(1);
@@ -216,7 +216,7 @@ class PetTypeRestControllerV1Tests {
     }
 
     @Test
-    @WithMockUser(roles="VET_ADMIN")
+    @WithMockUser(roles = "ADMIN")
     void testUpdatePetTypeError() throws Exception {
     	PetType newPetType = petTypes.get(0);
     	newPetType.setName("");
@@ -228,7 +228,7 @@ class PetTypeRestControllerV1Tests {
      }
 
     @Test
-    @WithMockUser(roles="VET_ADMIN")
+    @WithMockUser(roles = "ADMIN")
     void testDeletePetTypeSuccess() throws Exception {
     	PetType newPetType = petTypes.get(0);
     	ObjectMapper mapper = new ObjectMapper();
@@ -240,7 +240,7 @@ class PetTypeRestControllerV1Tests {
     }
 
     @Test
-    @WithMockUser(roles="VET_ADMIN")
+    @WithMockUser(roles = "ADMIN")
     void testDeletePetTypeError() throws Exception {
     	PetType newPetType = petTypes.get(0);
     	ObjectMapper mapper = new ObjectMapper();

@@ -102,7 +102,7 @@ class PetRestControllerV1Tests {
     }
 
     @Test
-    @WithMockUser(roles = "OWNER_ADMIN")
+    @WithMockUser(roles = "ADMIN")
     void testGetPetSuccess() throws Exception {
         given(this.clinicService.findPetById(3)).willReturn(petMapper.toPet(pets.get(0)));
         this.mockMvc.perform(get("/api/pets/3")
@@ -114,7 +114,7 @@ class PetRestControllerV1Tests {
     }
 
     @Test
-    @WithMockUser(roles = "OWNER_ADMIN")
+    @WithMockUser(roles = "ADMIN")
     void testGetPetNotFound() throws Exception {
         given(petMapper.toPetDto(this.clinicService.findPetById(999))).willReturn(null);
         this.mockMvc.perform(get("/api/pets/999")
@@ -123,7 +123,7 @@ class PetRestControllerV1Tests {
     }
 
     @Test
-    @WithMockUser(roles = "OWNER_ADMIN")
+    @WithMockUser(roles = "ADMIN")
     void testGetAllPetsSuccess() throws Exception {
         final Collection<Pet> mockPets = petMapper.toPets(this.pets);
         when(this.clinicService.findAllPets()).thenReturn(mockPets);
@@ -139,7 +139,7 @@ class PetRestControllerV1Tests {
     }
 
     @Test
-    @WithMockUser(roles = "OWNER_ADMIN")
+    @WithMockUser(roles = "ADMIN")
     void testGetAllPetsNotFound() throws Exception {
         pets.clear();
         given(this.clinicService.findAllPets()).willReturn(petMapper.toPets(pets));
@@ -149,7 +149,7 @@ class PetRestControllerV1Tests {
     }
 
     @Test
-    @WithMockUser(roles = "OWNER_ADMIN")
+    @WithMockUser(roles = "ADMIN")
     void testUpdatePetSuccess() throws Exception {
         given(this.clinicService.findPetById(3)).willReturn(petMapper.toPet(pets.get(0)));
         PetDto newPet = pets.get(0);
@@ -172,7 +172,7 @@ class PetRestControllerV1Tests {
     }
 
     @Test
-    @WithMockUser(roles = "OWNER_ADMIN")
+    @WithMockUser(roles = "ADMIN")
     void testUpdatePetError() throws Exception {
         PetDto newPet = pets.get(0);
         newPet.setName(null);
@@ -185,7 +185,7 @@ class PetRestControllerV1Tests {
     }
 
     @Test
-    @WithMockUser(roles = "OWNER_ADMIN")
+    @WithMockUser(roles = "ADMIN")
     void testUpdatePetWithEmptyNameShouldReturnBadRequest() throws Exception {
         PetDto newPet = pets.get(0);
         newPet.setName("");
@@ -195,12 +195,12 @@ class PetRestControllerV1Tests {
         this.mockMvc.perform(put("/api/pets/3")
                 .content(newPetAsJSON).accept(MediaType.APPLICATION_JSON_VALUE).contentType(MediaType.APPLICATION_JSON_VALUE))
             .andExpect(status().isBadRequest())
-            .andExpect(jsonPath("$.title").value("MethodArgumentNotValidException"))
+            .andExpect(jsonPath("$.title").value("Bad Request"))
             .andExpect(jsonPath("$.schemaValidationErrors[0].field").value("name"));
     }
 
     @Test
-    @WithMockUser(roles = "OWNER_ADMIN")
+    @WithMockUser(roles = "ADMIN")
     void testUpdatePetWithoutBirthDateShouldReturnBadRequest() throws Exception {
         PetDto newPet = pets.get(0);
         newPet.setBirthDate(null);
@@ -210,12 +210,12 @@ class PetRestControllerV1Tests {
         this.mockMvc.perform(put("/api/pets/3")
                 .content(newPetAsJSON).accept(MediaType.APPLICATION_JSON_VALUE).contentType(MediaType.APPLICATION_JSON_VALUE))
             .andExpect(status().isBadRequest())
-            .andExpect(jsonPath("$.title").value("MethodArgumentNotValidException"))
+            .andExpect(jsonPath("$.title").value("Bad Request"))
             .andExpect(jsonPath("$.schemaValidationErrors[0].field").value("birthDate"));
     }
 
     @Test
-    @WithMockUser(roles = "OWNER_ADMIN")
+    @WithMockUser(roles = "ADMIN")
     void testDeletePetSuccess() throws Exception {
         PetDto newPet = pets.get(0);
         ObjectMapper mapper = new ObjectMapper();
@@ -227,7 +227,7 @@ class PetRestControllerV1Tests {
     }
 
     @Test
-    @WithMockUser(roles = "OWNER_ADMIN")
+    @WithMockUser(roles = "ADMIN")
     void testDeletePetError() throws Exception {
         PetDto newPet = pets.get(0);
         ObjectMapper mapper = new ObjectMapper();

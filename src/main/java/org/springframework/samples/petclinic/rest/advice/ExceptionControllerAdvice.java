@@ -28,13 +28,20 @@ import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ProblemDetail;
 import org.springframework.http.ResponseEntity;
+import org.springframework.http.converter.HttpMessageNotReadableException;
 import org.springframework.samples.petclinic.rest.controller.BindingErrorsResponse;
 import org.springframework.samples.petclinic.rest.dto.ValidationMessageDto;
+import org.springframework.security.access.AccessDeniedException;
+import org.springframework.security.core.AuthenticationException;
 import org.springframework.validation.BindingResult;
+import org.springframework.web.HttpMediaTypeNotSupportedException;
+import org.springframework.web.HttpRequestMethodNotSupportedException;
 import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ControllerAdvice;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.ResponseBody;
+import org.springframework.web.method.annotation.MethodArgumentTypeMismatchException;
+import org.springframework.web.servlet.resource.NoResourceFoundException;
 
 /**
  * Global Exception handler for REST controllers.
@@ -51,19 +58,23 @@ public class ExceptionControllerAdvice {
     private static final String ERROR_UNEXPECTED = "An unexpected error occurred while processing your request";
     private static final String ERROR_DATA_INTEGRITY = "The requested resource could not be processed due to a data constraint violation";
     private static final String ERROR_INVALID_REQUEST = "The request contains invalid or missing parameters";
+    private static final String ERROR_FORBIDDEN = "You are not allowed to access this resource";
+    private static final String ERROR_UNAUTHORIZED = "Authentication is required to access this resource";
+    private static final String ERROR_NOT_FOUND = "The requested resource was not found";
 
     /**
-     * Private method for constructing the {@link ProblemDetail} object passing the name and details of the exception
-     * class.
+     * Private method for constructing the {@link ProblemDetail} object.
+     * <p>
+     * The title is the standard HTTP reason phrase, never the exception class name, so responses do not
+     * disclose implementation details (framework, libraries, code structure).
      *
-     * @param e     Object referring to the thrown exception.
      * @param status HTTP response status.
      * @param url URL request.
      */
-    private ProblemDetail detailBuild(Exception e, HttpStatus status, StringBuffer url, String detail) {
+    private ProblemDetail detailBuild(HttpStatus status, StringBuffer url, String detail) {
         ProblemDetail problemDetail = ProblemDetail.forStatus(status);
         problemDetail.setType(URI.create(url.toString()));
-        problemDetail.setTitle(e.getClass().getSimpleName());
+        problemDetail.setTitle(status.getReasonPhrase());
         problemDetail.setDetail(detail);
         problemDetail.setProperty("timestamp", Instant.now());
         problemDetail.setProperty("schemaValidationErrors", List.<ValidationMessageDto>of());
@@ -82,8 +93,59 @@ public class ExceptionControllerAdvice {
     public ResponseEntity<ProblemDetail> handleGeneralException(Exception e, HttpServletRequest request) {
         logger.error("Unexpected error at {} {}", request.getMethod(), request.getRequestURI(), e);
         HttpStatus status = HttpStatus.INTERNAL_SERVER_ERROR;
-        ProblemDetail detail = this.detailBuild(e, status, request.getRequestURL(), ERROR_UNEXPECTED);
+        ProblemDetail detail = this.detailBuild(status, request.getRequestURL(), ERROR_UNEXPECTED);
         return ResponseEntity.status(status).body(detail);
+    }
+
+    /**
+     * Handles authorization failures raised by {@code @PreAuthorize}. Without this handler the generic
+     * {@link Exception} handler would turn a denied access into a 500.
+     */
+    @ExceptionHandler(AccessDeniedException.class)
+    @ResponseBody
+    public ResponseEntity<ProblemDetail> handleAccessDeniedException(AccessDeniedException e, HttpServletRequest request) {
+        HttpStatus status = HttpStatus.FORBIDDEN;
+        return ResponseEntity.status(status).body(this.detailBuild(status, request.getRequestURL(), ERROR_FORBIDDEN));
+    }
+
+    @ExceptionHandler(AuthenticationException.class)
+    @ResponseBody
+    public ResponseEntity<ProblemDetail> handleAuthenticationException(AuthenticationException e, HttpServletRequest request) {
+        HttpStatus status = HttpStatus.UNAUTHORIZED;
+        return ResponseEntity.status(status).body(this.detailBuild(status, request.getRequestURL(), ERROR_UNAUTHORIZED));
+    }
+
+    /**
+     * Client errors (malformed JSON, wrong parameter type) are 400, not 500. The parser message is not
+     * returned because it can echo the payload and reveal internal class names.
+     */
+    @ExceptionHandler({HttpMessageNotReadableException.class, MethodArgumentTypeMismatchException.class})
+    @ResponseBody
+    public ResponseEntity<ProblemDetail> handleUnreadableRequest(Exception e, HttpServletRequest request) {
+        logger.debug("Unreadable request at {} {}", request.getMethod(), request.getRequestURI(), e);
+        HttpStatus status = HttpStatus.BAD_REQUEST;
+        return ResponseEntity.status(status).body(this.detailBuild(status, request.getRequestURL(), ERROR_INVALID_REQUEST));
+    }
+
+    @ExceptionHandler(HttpRequestMethodNotSupportedException.class)
+    @ResponseBody
+    public ResponseEntity<ProblemDetail> handleMethodNotSupported(HttpRequestMethodNotSupportedException e, HttpServletRequest request) {
+        HttpStatus status = HttpStatus.METHOD_NOT_ALLOWED;
+        return ResponseEntity.status(status).body(this.detailBuild(status, request.getRequestURL(), ERROR_INVALID_REQUEST));
+    }
+
+    @ExceptionHandler(HttpMediaTypeNotSupportedException.class)
+    @ResponseBody
+    public ResponseEntity<ProblemDetail> handleMediaTypeNotSupported(HttpMediaTypeNotSupportedException e, HttpServletRequest request) {
+        HttpStatus status = HttpStatus.UNSUPPORTED_MEDIA_TYPE;
+        return ResponseEntity.status(status).body(this.detailBuild(status, request.getRequestURL(), ERROR_INVALID_REQUEST));
+    }
+
+    @ExceptionHandler(NoResourceFoundException.class)
+    @ResponseBody
+    public ResponseEntity<ProblemDetail> handleNoResourceFound(NoResourceFoundException e, HttpServletRequest request) {
+        HttpStatus status = HttpStatus.NOT_FOUND;
+        return ResponseEntity.status(status).body(this.detailBuild(status, request.getRequestURL(), ERROR_NOT_FOUND));
     }
 
     /**
@@ -103,7 +165,7 @@ public class ExceptionControllerAdvice {
             e.getMessage());
         logger.debug("Data integrity violation stacktrace", e);
         HttpStatus status = HttpStatus.NOT_FOUND;
-        ProblemDetail detail = this.detailBuild(e, status, request.getRequestURL(), ERROR_DATA_INTEGRITY);
+        ProblemDetail detail = this.detailBuild(status, request.getRequestURL(), ERROR_DATA_INTEGRITY);
         return ResponseEntity.status(status).body(detail);
     }
 
@@ -120,7 +182,7 @@ public class ExceptionControllerAdvice {
         HttpStatus status = HttpStatus.BAD_REQUEST;
         BindingErrorsResponse errors = new BindingErrorsResponse();
         BindingResult bindingResult = e.getBindingResult();
-        ProblemDetail detail = this.detailBuild(e, status, request.getRequestURL(), ERROR_INVALID_REQUEST);
+        ProblemDetail detail = this.detailBuild(status, request.getRequestURL(), ERROR_INVALID_REQUEST);
         if (bindingResult.hasErrors()) {
             errors.addAllErrors(bindingResult);
             List<ValidationMessageDto> schemaValidationErrors = bindingResult.getFieldErrors().stream()

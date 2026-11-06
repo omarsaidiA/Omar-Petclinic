@@ -115,7 +115,7 @@ class VisitRestControllerV1Tests {
     }
 
     @Test
-    @WithMockUser(roles="OWNER_ADMIN")
+    @WithMockUser(roles = "ADMIN")
     void testGetVisitSuccess() throws Exception {
     	given(this.clinicService.findVisitById(2)).willReturn(visits.get(0));
         this.mockMvc.perform(get("/api/visits/2")
@@ -127,7 +127,7 @@ class VisitRestControllerV1Tests {
     }
 
     @Test
-    @WithMockUser(roles="OWNER_ADMIN")
+    @WithMockUser(roles = "ADMIN")
     void testGetVisitNotFound() throws Exception {
         given(this.clinicService.findVisitById(999)).willReturn(null);
         this.mockMvc.perform(get("/api/visits/999")
@@ -136,7 +136,7 @@ class VisitRestControllerV1Tests {
     }
 
     @Test
-    @WithMockUser(roles="OWNER_ADMIN")
+    @WithMockUser(roles = "ADMIN")
     void testGetAllVisitsSuccess() throws Exception {
     	given(this.clinicService.findAllVisits()).willReturn(visits);
         this.mockMvc.perform(get("/api/visits")
@@ -150,7 +150,7 @@ class VisitRestControllerV1Tests {
     }
 
     @Test
-    @WithMockUser(roles="OWNER_ADMIN")
+    @WithMockUser(roles = "ADMIN")
     void testGetAllVisitsNotFound() throws Exception {
     	visits.clear();
     	given(this.clinicService.findAllVisits()).willReturn(visits);
@@ -160,7 +160,7 @@ class VisitRestControllerV1Tests {
     }
 
     @Test
-    @WithMockUser(roles="OWNER_ADMIN")
+    @WithMockUser(roles = "ADMIN")
     void testCreateVisitSuccess() throws Exception {
     	Visit newVisit = visits.get(0);
     	newVisit.setId(999);
@@ -173,7 +173,7 @@ class VisitRestControllerV1Tests {
     }
 
     @Test
-    @WithMockUser(roles="OWNER_ADMIN")
+    @WithMockUser(roles = "ADMIN")
     void testCreateVisitError() throws Exception {
     	Visit newVisit = visits.get(0);
     	newVisit.setId(null);
@@ -186,7 +186,7 @@ class VisitRestControllerV1Tests {
      }
 
     @Test
-    @WithMockUser(roles="OWNER_ADMIN")
+    @WithMockUser(roles = "ADMIN")
     void testCreateVisitWithoutDateShouldReturnBadRequest() throws Exception {
     	Visit newVisit = visits.get(0);
     	newVisit.setId(null);
@@ -196,12 +196,12 @@ class VisitRestControllerV1Tests {
     	this.mockMvc.perform(post("/api/visits")
         		.content(newVisitAsJSON).accept(MediaType.APPLICATION_JSON_VALUE).contentType(MediaType.APPLICATION_JSON_VALUE))
         		.andExpect(status().isBadRequest())
-        		.andExpect(jsonPath("$.title").value("MethodArgumentNotValidException"))
+        		.andExpect(jsonPath("$.title").value("Bad Request"))
         		.andExpect(jsonPath("$.schemaValidationErrors[0].field").value("date"));
      }
 
     @Test
-    @WithMockUser(roles="OWNER_ADMIN")
+    @WithMockUser(roles = "ADMIN")
     void testUpdateVisitSuccess() throws Exception {
     	given(this.clinicService.findVisitById(2)).willReturn(visits.get(0));
     	Visit newVisit = visits.get(0);
@@ -222,7 +222,7 @@ class VisitRestControllerV1Tests {
     }
 
     @Test
-    @WithMockUser(roles="OWNER_ADMIN")
+    @WithMockUser(roles = "ADMIN")
     void testUpdateVisitError() throws Exception {
     	Visit newVisit = visits.get(0);
         newVisit.setDescription(null);
@@ -234,7 +234,7 @@ class VisitRestControllerV1Tests {
      }
 
     @Test
-    @WithMockUser(roles="OWNER_ADMIN")
+    @WithMockUser(roles = "ADMIN")
     void testUpdateVisitWithoutDateShouldReturnBadRequest() throws Exception {
     	Visit newVisit = visits.get(0);
         newVisit.setDate(null);
@@ -243,12 +243,12 @@ class VisitRestControllerV1Tests {
     	this.mockMvc.perform(put("/api/visits/2")
     		.content(newVisitAsJSON).accept(MediaType.APPLICATION_JSON_VALUE).contentType(MediaType.APPLICATION_JSON_VALUE))
         	.andExpect(status().isBadRequest())
-        	.andExpect(jsonPath("$.title").value("MethodArgumentNotValidException"))
+        	.andExpect(jsonPath("$.title").value("Bad Request"))
         	.andExpect(jsonPath("$.schemaValidationErrors[0].field").value("date"));
      }
 
     @Test
-    @WithMockUser(roles="OWNER_ADMIN")
+    @WithMockUser(roles = "ADMIN")
     void testDeleteVisitSuccess() throws Exception {
     	Visit newVisit = visits.get(0);
     	ObjectMapper mapper = new ObjectMapper();
@@ -260,7 +260,7 @@ class VisitRestControllerV1Tests {
     }
 
     @Test
-    @WithMockUser(roles="OWNER_ADMIN")
+    @WithMockUser(roles = "ADMIN")
     void testDeleteVisitError() throws Exception {
     	Visit newVisit = visits.get(0);
     	ObjectMapper mapper = new ObjectMapper();

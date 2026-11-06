@@ -38,7 +38,6 @@ import java.util.List;
  */
 
 @RestController
-@CrossOrigin(exposedHeaders = "errors, content-type")
 @RequestMapping("api")
 public class VisitRestControllerV1 implements VisitsApi {
 
@@ -52,7 +51,7 @@ public class VisitRestControllerV1 implements VisitsApi {
     }
 
 
-    @PreAuthorize("hasRole(@roles.OWNER_ADMIN)")
+    @PreAuthorize("hasAnyRole(@roles.ADMIN, @roles.VET)")
     @Override
     public ResponseEntity<List<VisitDto>> listVisits() {
         List<Visit> visits = new ArrayList<>(this.clinicService.findAllVisits());
@@ -62,7 +61,7 @@ public class VisitRestControllerV1 implements VisitsApi {
         return new ResponseEntity<>(new ArrayList<>(visitMapper.toVisitsDto(visits)), HttpStatus.OK);
     }
 
-    @PreAuthorize("hasRole(@roles.OWNER_ADMIN)")
+    @PreAuthorize("hasAnyRole(@roles.ADMIN, @roles.VET) or (hasRole(@roles.OWNER) and @ownership.ownsVisit(authentication, #visitId))")
     @Override
     public ResponseEntity<VisitDto> getVisit( Integer visitId) {
         Visit visit = this.clinicService.findVisitById(visitId);
@@ -72,7 +71,7 @@ public class VisitRestControllerV1 implements VisitsApi {
         return new ResponseEntity<>(visitMapper.toVisitDto(visit), HttpStatus.OK);
     }
 
-    @PreAuthorize("hasRole(@roles.OWNER_ADMIN)")
+    @PreAuthorize("hasAnyRole(@roles.ADMIN, @roles.VET)")
     @Override
     public ResponseEntity<VisitDto> addVisit(VisitDto visitDto) {
         HttpHeaders headers = new HttpHeaders();
@@ -83,7 +82,7 @@ public class VisitRestControllerV1 implements VisitsApi {
         return new ResponseEntity<>(visitDto, headers, HttpStatus.CREATED);
     }
 
-    @PreAuthorize("hasRole(@roles.OWNER_ADMIN)")
+    @PreAuthorize("hasAnyRole(@roles.ADMIN, @roles.VET)")
     @Override
     public ResponseEntity<VisitDto> updateVisit(Integer visitId, VisitFieldsDto visitDto) {
         Visit currentVisit = this.clinicService.findVisitById(visitId);
@@ -96,7 +95,7 @@ public class VisitRestControllerV1 implements VisitsApi {
         return new ResponseEntity<>(visitMapper.toVisitDto(currentVisit), HttpStatus.NO_CONTENT);
     }
 
-    @PreAuthorize("hasRole(@roles.OWNER_ADMIN)")
+    @PreAuthorize("hasAnyRole(@roles.ADMIN, @roles.VET)")
     @Transactional
     @Override
     public ResponseEntity<VisitDto> deleteVisit(Integer visitId) {

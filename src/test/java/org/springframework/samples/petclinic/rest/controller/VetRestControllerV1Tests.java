@@ -93,7 +93,7 @@ class VetRestControllerV1Tests {
     }
 
     @Test
-    @WithMockUser(roles="VET_ADMIN")
+    @WithMockUser(roles = "ADMIN")
     void testGetVetSuccess() throws Exception {
     	given(this.clinicService.findVetById(1)).willReturn(vets.get(0));
         this.mockMvc.perform(get("/api/vets/1")
@@ -105,7 +105,7 @@ class VetRestControllerV1Tests {
     }
 
     @Test
-    @WithMockUser(roles="VET_ADMIN")
+    @WithMockUser(roles = "ADMIN")
     void testGetVetNotFound() throws Exception {
     	given(this.clinicService.findVetById(999)).willReturn(null);
         this.mockMvc.perform(get("/api/vets/999")
@@ -114,7 +114,7 @@ class VetRestControllerV1Tests {
     }
 
     @Test
-    @WithMockUser(roles="VET_ADMIN")
+    @WithMockUser(roles = "ADMIN")
     void testGetAllVetsSuccess() throws Exception {
     	given(this.clinicService.findAllVets()).willReturn(vets);
         this.mockMvc.perform(get("/api/vets")
@@ -128,7 +128,7 @@ class VetRestControllerV1Tests {
     }
 
     @Test
-    @WithMockUser(roles="VET_ADMIN")
+    @WithMockUser(roles = "ADMIN")
     void testGetAllVetsNotFound() throws Exception {
     	vets.clear();
     	given(this.clinicService.findAllVets()).willReturn(vets);
@@ -138,7 +138,7 @@ class VetRestControllerV1Tests {
     }
 
     @Test
-    @WithMockUser(roles="VET_ADMIN")
+    @WithMockUser(roles = "ADMIN")
     void testCreateVetSuccess() throws Exception {
     	Vet newVet = vets.get(0);
     	newVet.setId(999);
@@ -150,7 +150,7 @@ class VetRestControllerV1Tests {
     }
 
     @Test
-    @WithMockUser(roles="VET_ADMIN")
+    @WithMockUser(roles = "ADMIN")
     void testCreateVetError() throws Exception {
     	Vet newVet = vets.get(0);
     	newVet.setId(null);
@@ -163,7 +163,7 @@ class VetRestControllerV1Tests {
      }
 
     @Test
-    @WithMockUser(roles="VET_ADMIN")
+    @WithMockUser(roles = "ADMIN")
     void testUpdateVetSuccess() throws Exception {
     	given(this.clinicService.findVetById(1)).willReturn(vets.get(0));
     	Vet newVet = vets.get(0);
@@ -185,7 +185,7 @@ class VetRestControllerV1Tests {
     }
 
     @Test
-    @WithMockUser(roles="VET_ADMIN")
+    @WithMockUser(roles = "ADMIN")
     void testUpdateVetError() throws Exception {
     	Vet newVet = vets.get(0);
     	newVet.setFirstName(null);
@@ -197,7 +197,7 @@ class VetRestControllerV1Tests {
      }
 
     @Test
-    @WithMockUser(roles="VET_ADMIN")
+    @WithMockUser(roles = "ADMIN")
     void testDeleteVetSuccess() throws Exception {
     	Vet newVet = vets.get(0);
     	ObjectMapper mapper = new ObjectMapper();
@@ -209,7 +209,7 @@ class VetRestControllerV1Tests {
     }
 
     @Test
-    @WithMockUser(roles="VET_ADMIN")
+    @WithMockUser(roles = "ADMIN")
     void testDeleteVetError() throws Exception {
     	Vet newVet = vets.get(0);
     	ObjectMapper mapper = new ObjectMapper();

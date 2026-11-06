@@ -11,12 +11,10 @@ import org.springframework.samples.petclinic.rest.api.PetV2Api;
 import org.springframework.samples.petclinic.rest.dto.PetPageDto;
 import org.springframework.samples.petclinic.service.ClinicService;
 import org.springframework.security.access.prepost.PreAuthorize;
-import org.springframework.web.bind.annotation.CrossOrigin;
 import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.bind.annotation.RequestMapping;
 
 @RestController
-@CrossOrigin(exposedHeaders = "errors, content-type")
 @RequestMapping("/api")
 public class PetRestControllerV2 implements PetV2Api {
 
@@ -29,7 +27,7 @@ public class PetRestControllerV2 implements PetV2Api {
     }
 
     @Override
-    @PreAuthorize("hasRole(@roles.OWNER_ADMIN)")
+    @PreAuthorize("hasAnyRole(@roles.ADMIN, @roles.VET)")
     public ResponseEntity<PetPageDto> listPetsPage(Integer page, Integer size) {
         int pageNumber = page == null ? 0 : page;
         int pageSize = size == null ? 20 : size;
