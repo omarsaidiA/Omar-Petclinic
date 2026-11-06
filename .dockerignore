@@ -1,0 +1,17 @@
+# Keep the build context small and free of secrets
+.git
+.github
+.idea
+.vscode
+*.iml
+target
+generated
+.env
+.env.*
+keycloak
+docker-compose*.yml
+Dockerfile
+*.md
+*.png
+src/test/postman
+src/test/jmeter
