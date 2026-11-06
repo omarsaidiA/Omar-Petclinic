@@ -4,10 +4,11 @@
     <modelVersion>4.0.0</modelVersion>
 
     <groupId>org.springframework.samples</groupId>
-    <artifactId>spring-petclinic-rest</artifactId>
+    <artifactId>omar-petclinic</artifactId>
     <version>4.0.2</version>
 
-    <description>REST version of the Spring Petclinic sample application</description>
+    <name>omar-petclinic</name>
+    <description>Secured REST API based on Spring Petclinic REST (OAuth2/Keycloak, RBAC, DevSecOps pipeline)</description>
     <url>https://spring-petclinic.github.io/</url>
 
     <parent>

@@ -1,7 +1,7 @@
 openapi: 3.0.1
 info:
-  title: Spring PetClinic
-  description: Spring PetClinic Sample Application.
+  title: omar-petclinic
+  description: Secured REST API based on the Spring PetClinic sample application.
   license:
     name: Apache 2.0
     url: https://www.apache.org/licenses/LICENSE-2.0

@@ -41,7 +41,7 @@ public class SwaggerConfig {
         return new OpenAPI()
             .components(new Components())
             .info(new Info()
-                .title("REST Petclinic backend API documentation")
+                .title("omar-petclinic API documentation")
                 .version("1.0")
                 .termsOfService("https://github.com/spring-petclinic/spring-petclinic-rest/blob/master/terms.txt")
                 .description(
