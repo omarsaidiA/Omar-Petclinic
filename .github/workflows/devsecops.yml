@@ -249,11 +249,24 @@ jobs:
           if [ "$rc" -eq 1 ]; then exit 1; fi
           if [ "$rc" -gt 2 ]; then echo "ZAP did not complete"; exit "$rc"; fi
 
-      - name: Upload SARIF
+      # Code scanning only accepts repository file locations, while ZAP reports URLs: attach each
+      # alert to the API contract, keep the URL in the message, drop false positives (level "none")
+      # and the raw HTTP exchanges.
+      - name: Convert SARIF for code scanning
         if: always() && hashFiles('zap-out/zap.sarif.json') != ''
+        run: |
+          jq '.runs[].results |= map(select(.level != "none"))
+            | .runs[].results[] |= (
+                .message.text += " (URL: " + .locations[0].physicalLocation.artifactLocation.uri + ")"
+                | .locations[].physicalLocation = {artifactLocation: {uri: "src/main/resources/openapi.yml"}, region: {startLine: 1}}
+                | del(.webRequest, .webResponse))' \
+            zap-out/zap.sarif.json > zap-out/zap-github.sarif.json
+
+      - name: Upload SARIF
+        if: always() && hashFiles('zap-out/zap-github.sarif.json') != ''
         uses: github/codeql-action/upload-sarif@33d7b85da1a04171e211befe2c739303b9a4c066 # v4.39.3
         with:
-          sarif_file: zap-out/zap.sarif.json
+          sarif_file: zap-out/zap-github.sarif.json
           category: zap
 
       - name: Upload HTML report
