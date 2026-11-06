@@ -1,7 +1,7 @@
 # syntax=docker/dockerfile:1
 
 # ---- Stage 1: build the jar with the Maven wrapper (JDK, build tools) ----
-FROM eclipse-temurin:21.0.13_9-jdk-alpine AS build
+FROM eclipse-temurin:24.0.2_12-jdk-alpine AS build
 WORKDIR /workspace
 
 COPY mvnw pom.xml ./
@@ -14,7 +14,7 @@ RUN --mount=type=cache,target=/root/.m2 \
     && cp target/omar-petclinic-*.jar /workspace/app.jar
 
 # ---- Stage 2: minimal runtime (JRE only, no compiler, no Maven, no sources) ----
-FROM eclipse-temurin:21.0.13_9-jre-alpine
+FROM eclipse-temurin:24.0.2_12-jre-alpine
 
 # Dedicated unprivileged user with a fixed UID/GID
 RUN addgroup -S -g 10001 app \
