@@ -189,10 +189,10 @@ Il faut quand même un Keycloak accessible sur `localhost:8080` pour obtenir des
 ## Crédits
 
 Ce projet est basé sur [**spring-petclinic/spring-petclinic-rest**](https://github.com/spring-petclinic/spring-petclinic-rest),
-distribué sous licence [Apache 2.0](LICENSE.txt). Merci à ses auteurs et contributeurs. L'historique
-git d'origine est conservé, ainsi que la licence et toutes les mentions de copyright. Les
-modifications apportées sont listées dans la section [Ce que j'ai ajouté](#ce-que-jai-ajouté) et
-visibles commit par commit.
+distribué sous licence [Apache 2.0](LICENSE.txt). Merci à ses auteurs et contributeurs. Le premier
+commit importe le projet d'origine tel quel (référence du commit source dans son message) ; la
+licence et toutes les mentions de copyright sont conservées. Les modifications apportées sont
+listées dans la section [Ce que j'ai ajouté](#ce-que-jai-ajouté) et visibles commit par commit.
 
 ## Licence
 

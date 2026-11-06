@@ -13,7 +13,7 @@ et ZAP 2.17.0. Le DAST a été lancé avec un token VET contre la stack `docker 
 
 | Outil | Périmètre | Avant | Après |
 |---|---|---|---|
-| Gitleaks | 788 commits (historique complet) | 0 secret | 0 secret |
+| Gitleaks | Historique complet du projet d'origine (788 commits) | 0 secret | 0 secret |
 | Semgrep (`p/java`, `p/owasp-top-ten`) | Code Java, workflows, config | 11 constats (niveau warning) | 0 |
 | Trivy (SCA, jar et `pom.xml`) | Dépendances livrées | 1 Medium | 0 |
 | Trivy (image) | Alpine 3.24 et jar | 0 HIGH/CRITICAL corrigeable | 0 |
