@@ -16,6 +16,16 @@ env:
     progressToStdout: true
 
 jobs:
+  # Documented false positive (see SECURITY-FINDINGS.md): "Timestamp Disclosure" on numbers such as
+  # 1732584193 (0x67452301), which are MD5/SHA-1 initialisation constants inside Swagger UI scripts.
+  # Scoped to those vendor files so a real timestamp leak anywhere else is still reported.
+  - type: alertFilter
+    alertFilters:
+      - ruleId: 10096
+        newRisk: "False Positive"
+        url: ".*/swagger-ui/swagger-ui-(bundle|standalone-preset)\\.js"
+        urlRegex: true
+
   - type: openapi
     parameters:
       apiUrl: "${ZAP_TARGET}/v3/api-docs"
@@ -26,6 +36,13 @@ jobs:
     parameters:
       context: omar-petclinic
       url: "${ZAP_TARGET}/api/owners"
+      maxDuration: 2
+
+  # Swagger UI is public: crawl it explicitly so its JavaScript libraries are always checked
+  - type: spider
+    parameters:
+      context: omar-petclinic
+      url: "${ZAP_TARGET}/swagger-ui/index.html"
       maxDuration: 2
 
   - type: passiveScan-wait

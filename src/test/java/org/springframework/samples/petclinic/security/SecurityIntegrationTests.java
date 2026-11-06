@@ -90,6 +90,14 @@ class SecurityIntegrationTests {
         }
 
         @Test
+        void swaggerUiIsServedWithItsOwnCsp() throws Exception {
+            // Guards the Swagger UI webjar override: a version mismatch with springdoc silently returns 404
+            mockMvc.perform(get("/swagger-ui/index.html"))
+                .andExpect(status().isOk())
+                .andExpect(header().string("Content-Security-Policy", containsString("default-src 'self'")));
+        }
+
+        @Test
         void healthIsPublic() throws Exception {
             mockMvc.perform(get("/actuator/health")).andExpect(status().isOk());
         }
@@ -130,6 +138,24 @@ class SecurityIntegrationTests {
                     .contentType(MediaType.APPLICATION_JSON).content(OWNER_JSON))
                 .andExpect(status().isCreated());
         }
+
+        @Test
+        void cannotUpdateAPetThroughAnotherOwnersUrl() throws Exception {
+            // BOLA regression: pet 7 belongs to owner 6, not owner 1
+            String pet = "{\"name\":\"Hijacked\",\"birthDate\":\"2012-09-04\",\"type\":{\"id\":1,\"name\":\"cat\"}}";
+            mockMvc.perform(put("/api/owners/1/pets/7").with(admin())
+                    .contentType(MediaType.APPLICATION_JSON).content(pet))
+                .andExpect(status().isNotFound());
+        }
+
+        @Test
+        void createdUserPasswordIsNeverReturned() throws Exception {
+            String user = "{\"username\":\"newvet\",\"password\":\"Str0ng-Passw0rd!\",\"enabled\":true,\"roles\":[{\"name\":\"VET\"}]}";
+            mockMvc.perform(post("/api/users").with(admin()).contentType(MediaType.APPLICATION_JSON).content(user))
+                .andExpect(status().isCreated())
+                .andExpect(jsonPath("$.password").doesNotExist())
+                .andExpect(content().string(not(containsString("Str0ng-Passw0rd!"))));
+        }
     }
 
     @Nested
@@ -149,6 +175,17 @@ class SecurityIntegrationTests {
             mockMvc.perform(put("/api/visits/1").with(vet())
                     .contentType(MediaType.APPLICATION_JSON).content(VISIT_JSON))
                 .andExpect(status().isNoContent());
+        }
+
+        @Test
+        void cannotAddAVisitToAPetThroughAnotherOwnersUrl() throws Exception {
+            // BOLA regression: pet 7 belongs to owner 6, not owner 1
+            mockMvc.perform(post("/api/owners/1/pets/7/visits").with(vet())
+                    .contentType(MediaType.APPLICATION_JSON).content(VISIT_JSON))
+                .andExpect(status().isNotFound());
+            mockMvc.perform(post("/api/owners/6/pets/7/visits").with(vet())
+                    .contentType(MediaType.APPLICATION_JSON).content(VISIT_JSON))
+                .andExpect(status().isCreated());
         }
 
         @Test

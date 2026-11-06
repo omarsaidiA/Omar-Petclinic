@@ -158,7 +158,8 @@ public class OwnerRestControllerV1 implements OwnersApi {
     public ResponseEntity<Void> updateOwnersPet(Integer ownerId, Integer petId, PetFieldsDto petFieldsDto) {
         Owner currentOwner = this.clinicService.findOwnerById(ownerId);
         if (currentOwner != null) {
-            Pet currentPet = this.clinicService.findPetById(petId);
+            // Look the pet up through its owner: another owner's pet is "not found" (prevents BOLA/IDOR)
+            Pet currentPet = currentOwner.getPet(petId);
             if (currentPet != null) {
                 currentPet.setBirthDate(petFieldsDto.getBirthDate());
                 currentPet.setName(petFieldsDto.getName());
@@ -173,10 +174,14 @@ public class OwnerRestControllerV1 implements OwnersApi {
     @PreAuthorize("hasAnyRole(@roles.ADMIN, @roles.VET)")
     @Override
     public ResponseEntity<VisitDto> addVisitToOwner(Integer ownerId, Integer petId, VisitFieldsDto visitFieldsDto) {
+        // The pet must exist and belong to the owner in the URL; ownerId used to be ignored (BOLA/IDOR)
+        Owner owner = this.clinicService.findOwnerById(ownerId);
+        Pet pet = owner == null ? null : owner.getPet(petId);
+        if (pet == null) {
+            return new ResponseEntity<>(HttpStatus.NOT_FOUND);
+        }
         HttpHeaders headers = new HttpHeaders();
         Visit visit = visitMapper.toVisit(visitFieldsDto);
-        Pet pet = new Pet();
-        pet.setId(petId);
         visit.setPet(pet);
         this.clinicService.saveVisit(visit);
         VisitDto visitDto = visitMapper.toVisitDto(visit);

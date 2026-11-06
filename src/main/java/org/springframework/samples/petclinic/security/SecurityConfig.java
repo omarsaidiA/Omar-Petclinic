@@ -13,6 +13,8 @@ import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configurers.AbstractHttpConfigurer;
 import org.springframework.security.config.annotation.web.configurers.HeadersConfigurer;
 import org.springframework.security.config.http.SessionCreationPolicy;
+import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
+import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.security.oauth2.server.resource.authentication.JwtAuthenticationConverter;
 import org.springframework.security.oauth2.server.resource.web.authentication.BearerTokenAuthenticationFilter;
 import org.springframework.security.web.SecurityFilterChain;
@@ -97,6 +99,15 @@ public class SecurityConfig {
             .referrerPolicy(referrer -> referrer.policy(ReferrerPolicy.NO_REFERRER))
             // Sent only on HTTPS requests, as the HSTS specification requires
             .httpStrictTransportSecurity(hsts -> hsts.includeSubDomains(true).maxAgeInSeconds(HSTS_MAX_AGE_SECONDS));
+    }
+
+    /**
+     * Hashes passwords of the legacy users table. Raw BCrypt (60 chars, no {bcrypt} prefix) to fit the
+     * existing VARCHAR(60) column; cost 12 = 4096 rounds, slow enough to resist offline brute force.
+     */
+    @Bean
+    PasswordEncoder passwordEncoder() {
+        return new BCryptPasswordEncoder(12);
     }
 
     @Bean

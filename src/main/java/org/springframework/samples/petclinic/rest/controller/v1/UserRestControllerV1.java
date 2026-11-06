@@ -47,6 +47,9 @@ public class UserRestControllerV1 implements UsersApi {
         HttpHeaders headers = new HttpHeaders();
         User user = userMapper.toUser(userDto);
         this.userService.saveUser(user);
-        return new ResponseEntity<>(userMapper.toUserDto(user), headers, HttpStatus.CREATED);
+        UserDto created = userMapper.toUserDto(user);
+        // Never echo a password (or its hash) back: the generator ignores the OpenAPI writeOnly flag
+        created.setPassword(null);
+        return new ResponseEntity<>(created, headers, HttpStatus.CREATED);
     }
 }

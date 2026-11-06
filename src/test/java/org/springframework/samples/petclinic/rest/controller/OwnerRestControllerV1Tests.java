@@ -531,6 +531,8 @@ class OwnerRestControllerV1Tests {
     @Test
     @WithMockUser(roles = "ADMIN")
     void testCreateVisitSuccess() throws Exception {
+        // Owner 1 owns pet 1
+        given(this.clinicService.findOwnerById(1)).willReturn(ownerMapper.toOwner(owners.get(0)));
         VisitDto newVisit = visits.get(0);
         newVisit.setId(999);
         ObjectMapper mapper = new ObjectMapper();
@@ -595,9 +597,9 @@ class OwnerRestControllerV1Tests {
     @WithMockUser(roles = "ADMIN")
     void testUpdateOwnersPetSuccess() throws Exception {
         int ownerId = owners.get(0).getId();
-        int petId = pets.get(0).getId();
+        // Pet 1 belongs to owner 1 (it used to update pet 3, which belongs to nobody in this fixture)
+        int petId = owners.get(0).getPets().get(0).getId();
         given(this.clinicService.findOwnerById(ownerId)).willReturn(ownerMapper.toOwner(owners.get(0)));
-        given(this.clinicService.findPetById(petId)).willReturn(petMapper.toPet(pets.get(0)));
         PetDto updatedPetDto = pets.get(0);
         updatedPetDto.setName("Rex");
         updatedPetDto.setBirthDate(LocalDate.of(2020, 1, 15));
