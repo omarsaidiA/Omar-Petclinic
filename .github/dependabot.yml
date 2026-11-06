@@ -1,8 +1,42 @@
 version: 2
+
+# Cooldown: wait before proposing a freshly published version, so a compromised release
+# is more likely to be detected and pulled before it reaches this project (supply chain).
+# No auto-merge: every update goes through the DevSecOps pipeline and a human review.
+
 updates:
-  - package-ecosystem: "maven"
-    directory: "/"
+  - package-ecosystem: maven
+    directory: /
     schedule:
-      interval: "monthly"
-    labels:
-      - "dependencies"
+      interval: weekly
+    cooldown:
+      default-days: 7
+      semver-major-days: 14
+    groups:
+      spring-boot:
+        patterns: ["org.springframework.boot:*"]
+    labels: [dependencies, java]
+
+  - package-ecosystem: docker
+    directory: /
+    schedule:
+      interval: weekly
+    cooldown:
+      default-days: 7
+    labels: [dependencies, docker]
+
+  - package-ecosystem: docker-compose
+    directory: /
+    schedule:
+      interval: weekly
+    cooldown:
+      default-days: 7
+    labels: [dependencies, docker]
+
+  - package-ecosystem: github-actions
+    directory: /
+    schedule:
+      interval: weekly
+    cooldown:
+      default-days: 7
+    labels: [dependencies, ci]

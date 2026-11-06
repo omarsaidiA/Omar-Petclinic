@@ -1,0 +1,53 @@
+# ZAP Automation Framework plan: baseline (passive) scan of the authenticated API.
+# Equivalent to zap-baseline.py (spider + passive scan, no active attacks), plus an OpenAPI import
+# so every documented endpoint is visited (a JSON API has no links for the spider to follow).
+#
+# Variable: ZAP_TARGET (API base URL, e.g. http://localhost:9966/petclinic).
+# The Bearer token is injected with `-config replacer.full_list(0)...` on the zap.sh command line:
+# the plan's own replacer job does not expand environment variables in its replacement string.
+env:
+  contexts:
+    - name: omar-petclinic
+      urls:
+        - "${ZAP_TARGET}"
+  parameters:
+    failOnError: true
+    failOnWarning: false
+    progressToStdout: true
+
+jobs:
+  - type: openapi
+    parameters:
+      apiUrl: "${ZAP_TARGET}/v3/api-docs"
+      targetUrl: "${ZAP_TARGET}/api"
+      context: omar-petclinic
+
+  - type: spider
+    parameters:
+      context: omar-petclinic
+      url: "${ZAP_TARGET}/api/owners"
+      maxDuration: 2
+
+  - type: passiveScan-wait
+    parameters:
+      maxDuration: 3
+
+  - type: report
+    parameters:
+      template: sarif-json
+      reportDir: /zap/wrk
+      reportFile: zap.sarif.json
+    risks: [low, medium, high]
+
+  - type: report
+    parameters:
+      template: traditional-html
+      reportDir: /zap/wrk
+      reportFile: zap-report.html
+    risks: [info, low, medium, high]
+
+  # Exit code 1 on any High risk alert, 2 on Medium (warning only)
+  - type: exitStatus
+    parameters:
+      errorLevel: High
+      warnLevel: Medium

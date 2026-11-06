@@ -1,0 +1,272 @@
+name: DevSecOps
+
+on:
+  push:
+    branches: [main, master]
+  pull_request:
+  workflow_dispatch:
+
+# Least privilege: read-only by default, write access to code scanning only where SARIF is uploaded
+permissions:
+  contents: read
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+# Tool images are pinned to exact versions; Dependabot cannot bump them, so update them deliberately
+env:
+  JAVA_VERSION: '21'
+  GITLEAKS_IMAGE: zricethezav/gitleaks:v8.30.1
+  SEMGREP_IMAGE: semgrep/semgrep:1.182.1
+  TRIVY_IMAGE: aquasec/trivy:0.76.1
+  ZAP_IMAGE: zaproxy/zap-stable:2.17.0
+
+jobs:
+  # 1. Build and tests ---------------------------------------------------------------------------
+  build:
+    name: Build and tests
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+
+      - uses: actions/setup-java@77dd5b2ce225ea11469928ac317850245a74ae78 # v6.2.0
+        with:
+          distribution: temurin
+          java-version: ${{ env.JAVA_VERSION }}
+          cache: maven
+
+      - name: Build, unit and integration tests
+        run: ./mvnw -B verify
+
+      - name: Upload test reports
+        if: failure()
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        with:
+          name: test-reports
+          path: target/surefire-reports/
+          retention-days: 7
+
+      - name: Upload application jar
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        with:
+          name: app-jar
+          path: target/omar-petclinic-*.jar
+          retention-days: 7
+
+  # 2. Secret detection --------------------------------------------------------------------------
+  secrets:
+    name: Secret detection (Gitleaks)
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    permissions:
+      contents: read
+      security-events: write
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          fetch-depth: 0 # full history: a secret deleted in a later commit is still leaked
+          persist-credentials: false
+
+      - name: Scan the whole git history
+        run: |
+          docker run --rm --user "$(id -u):$(id -g)" -e HOME=/tmp -v "$PWD:/repo" --entrypoint sh "$GITLEAKS_IMAGE" -c \
+            'git config --global --add safe.directory /repo && gitleaks git /repo --redact --no-banner --exit-code 1 --report-format sarif --report-path /repo/gitleaks.sarif'
+
+      - name: Upload SARIF
+        if: always() && hashFiles('gitleaks.sarif') != ''
+        uses: github/codeql-action/upload-sarif@33d7b85da1a04171e211befe2c739303b9a4c066 # v4.39.3
+        with:
+          sarif_file: gitleaks.sarif
+          category: gitleaks
+
+  # 3. SAST --------------------------------------------------------------------------------------
+  sast:
+    name: SAST (Semgrep)
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    permissions:
+      contents: read
+      security-events: write
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+
+      - name: Scan with Java and OWASP Top 10 rules
+        run: |
+          docker run --rm --user "$(id -u):$(id -g)" -e HOME=/tmp -v "$PWD:/src" -w /src "$SEMGREP_IMAGE" \
+            semgrep scan --config p/java --config p/owasp-top-ten --metrics=off \
+              --exclude target --exclude src/test \
+              --sarif --output semgrep.sarif
+
+      - name: Upload SARIF
+        if: always() && hashFiles('semgrep.sarif') != ''
+        uses: github/codeql-action/upload-sarif@33d7b85da1a04171e211befe2c739303b9a4c066 # v4.39.3
+        with:
+          sarif_file: semgrep.sarif
+          category: semgrep
+
+      - name: Fail on high severity findings
+        # Semgrep stores severity on the rule (ERROR = high), not on each result
+        run: |
+          count=$(jq '[.runs[0] as $run | $run.results[] | .ruleId as $id
+                      | $run.tool.driver.rules[] | select(.id == $id and .defaultConfiguration.level == "error")] | length' semgrep.sarif)
+          echo "High severity findings: $count"
+          test "$count" -eq 0
+
+  # 4. SCA ---------------------------------------------------------------------------------------
+  sca:
+    name: SCA (Trivy filesystem)
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    permissions:
+      contents: read
+      security-events: write
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+
+      - uses: actions/setup-java@77dd5b2ce225ea11469928ac317850245a74ae78 # v6.2.0
+        with:
+          distribution: temurin
+          java-version: ${{ env.JAVA_VERSION }}
+          cache: maven
+
+      # Trivy reads the dependency tree from ~/.m2 instead of querying Maven Central for every pom
+      - name: Resolve dependencies into the local Maven cache
+        run: ./mvnw -B -q dependency:resolve
+
+      - name: Scan dependencies and Dockerfile (report)
+        run: |
+          docker run --rm -v "$HOME/.m2:/root/.m2:ro" -v "$HOME/.cache/trivy:/root/.cache/trivy" -v "$PWD:/src" "$TRIVY_IMAGE" \
+            fs --scanners vuln,misconfig --skip-dirs target --offline-scan \
+            --format sarif --output /src/trivy-fs.sarif /src
+
+      - name: Upload SARIF
+        if: always() && hashFiles('trivy-fs.sarif') != ''
+        uses: github/codeql-action/upload-sarif@33d7b85da1a04171e211befe2c739303b9a4c066 # v4.39.3
+        with:
+          sarif_file: trivy-fs.sarif
+          category: trivy-fs
+
+      - name: Fail on HIGH/CRITICAL
+        run: |
+          docker run --rm -v "$HOME/.m2:/root/.m2:ro" -v "$HOME/.cache/trivy:/root/.cache/trivy" -v "$PWD:/src:ro" "$TRIVY_IMAGE" \
+            fs --scanners vuln,misconfig --skip-dirs target --offline-scan \
+            --severity HIGH,CRITICAL --exit-code 1 --format table /src
+
+  # 5. Container image scan ----------------------------------------------------------------------
+  image:
+    name: Image scan (Trivy)
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    permissions:
+      contents: read
+      security-events: write
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+
+      - name: Build the image
+        run: docker build -t omar-petclinic:ci .
+
+      - name: Scan the image (report)
+        run: |
+          docker run --rm -v /var/run/docker.sock:/var/run/docker.sock -v "$HOME/.cache/trivy:/root/.cache/trivy" -v "$PWD:/out" "$TRIVY_IMAGE" \
+            image --scanners vuln --format sarif --output /out/trivy-image.sarif omar-petclinic:ci
+
+      - name: Upload SARIF
+        if: always() && hashFiles('trivy-image.sarif') != ''
+        uses: github/codeql-action/upload-sarif@33d7b85da1a04171e211befe2c739303b9a4c066 # v4.39.3
+        with:
+          sarif_file: trivy-image.sarif
+          category: trivy-image
+
+      - name: Fail on fixable HIGH/CRITICAL
+        # --ignore-unfixed: a CVE with no patched package yet cannot be fixed by us; it stays visible in the report
+        run: |
+          docker run --rm -v /var/run/docker.sock:/var/run/docker.sock -v "$HOME/.cache/trivy:/root/.cache/trivy" "$TRIVY_IMAGE" \
+            image --scanners vuln --severity HIGH,CRITICAL --ignore-unfixed --exit-code 1 --format table omar-petclinic:ci
+
+  # 6. DAST --------------------------------------------------------------------------------------
+  dast:
+    name: DAST (ZAP baseline)
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    permissions:
+      contents: read
+      security-events: write
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+
+      - name: Generate throwaway secrets
+        run: |
+          {
+            echo "POSTGRES_PASSWORD=$(openssl rand -hex 24)"
+            echo "KEYCLOAK_ADMIN_PASSWORD=$(openssl rand -hex 24)"
+            echo "RATE_LIMIT_AUTHENTICATED_PER_MINUTE=100000"
+            echo "RATE_LIMIT_ANONYMOUS_PER_MINUTE=100000"
+          } > .env
+
+      - name: Start the stack (app, PostgreSQL, Keycloak)
+        run: docker compose up -d --build --wait --wait-timeout 300
+
+      - name: Get an access token (dev-only VET test user)
+        run: |
+          token=$(curl -sf -X POST http://localhost:8080/realms/omar-petclinic/protocol/openid-connect/token \
+            -d grant_type=password -d client_id=omar-petclinic-api \
+            -d username=vet --data-urlencode 'password=Vet-DevOnly-2026!' | jq -r .access_token)
+          echo "::add-mask::$token"
+          echo "ZAP_AUTH_TOKEN=$token" >> "$GITHUB_ENV"
+
+      - name: ZAP baseline scan (spider + passive, authenticated)
+        run: |
+          mkdir -p zap-out && chmod 777 zap-out
+          set +e
+          docker run --rm --network host -v "$PWD/.zap:/zap/plan:ro" -v "$PWD/zap-out:/zap/wrk" \
+            -e ZAP_TARGET=http://localhost:9966/petclinic "$ZAP_IMAGE" \
+            zap.sh -cmd \
+              -config 'replacer.full_list(0).description=auth' \
+              -config 'replacer.full_list(0).enabled=true' \
+              -config 'replacer.full_list(0).matchtype=REQ_HEADER' \
+              -config 'replacer.full_list(0).matchstr=Authorization' \
+              -config 'replacer.full_list(0).regex=false' \
+              -config "replacer.full_list(0).replacement=Bearer ${ZAP_AUTH_TOKEN}" \
+              -autorun /zap/plan/baseline.yaml
+          rc=$?
+          set -e
+          # Exit code 1 = High risk alert (fail), 2 = Medium only (warning), 0 = clean
+          echo "ZAP exit code: $rc"
+          if [ "$rc" -eq 1 ]; then exit 1; fi
+          if [ "$rc" -gt 2 ]; then echo "ZAP did not complete"; exit "$rc"; fi
+
+      - name: Upload SARIF
+        if: always() && hashFiles('zap-out/zap.sarif.json') != ''
+        uses: github/codeql-action/upload-sarif@33d7b85da1a04171e211befe2c739303b9a4c066 # v4.39.3
+        with:
+          sarif_file: zap-out/zap.sarif.json
+          category: zap
+
+      - name: Upload HTML report
+        if: always() && hashFiles('zap-out/zap-report.html') != ''
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        with:
+          name: zap-report
+          path: zap-out/zap-report.html
+          retention-days: 14
+
+      - name: Show application logs
+        if: failure()
+        run: docker compose logs app
+
+      - name: Stop the stack
+        if: always()
+        run: docker compose down -v

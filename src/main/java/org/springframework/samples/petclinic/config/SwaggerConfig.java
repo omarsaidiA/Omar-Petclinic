@@ -20,8 +20,6 @@ package org.springframework.samples.petclinic.config;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 
-import java.util.Collections;
-
 import io.swagger.v3.oas.models.Components;
 import io.swagger.v3.oas.models.OpenAPI;
 import io.swagger.v3.oas.models.info.Contact;
@@ -72,7 +70,6 @@ public class SwaggerConfig {
         License petClinicLicense = new License();
         petClinicLicense.setName("Apache 2.0");
         petClinicLicense.setUrl("http://www.apache.org/licenses/LICENSE-2.0");
-        petClinicLicense.setExtensions(Collections.emptyMap());
         return petClinicLicense;
     }
 
