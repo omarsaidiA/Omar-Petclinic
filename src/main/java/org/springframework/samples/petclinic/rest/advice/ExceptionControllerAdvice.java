@@ -22,6 +22,7 @@ import java.util.List;
 import java.util.Objects;
 
 import jakarta.servlet.http.HttpServletRequest;
+import jakarta.validation.ConstraintViolationException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.dao.DataIntegrityViolationException;
@@ -31,6 +32,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.http.converter.HttpMessageNotReadableException;
 import org.springframework.samples.petclinic.rest.controller.BindingErrorsResponse;
 import org.springframework.samples.petclinic.rest.dto.ValidationMessageDto;
+import org.springframework.samples.petclinic.security.SecurityEventLogger;
 import org.springframework.security.access.AccessDeniedException;
 import org.springframework.security.core.AuthenticationException;
 import org.springframework.validation.BindingResult;
@@ -40,6 +42,7 @@ import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ControllerAdvice;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.ResponseBody;
+import org.springframework.web.method.annotation.HandlerMethodValidationException;
 import org.springframework.web.method.annotation.MethodArgumentTypeMismatchException;
 import org.springframework.web.servlet.resource.NoResourceFoundException;
 
@@ -104,6 +107,7 @@ public class ExceptionControllerAdvice {
     @ExceptionHandler(AccessDeniedException.class)
     @ResponseBody
     public ResponseEntity<ProblemDetail> handleAccessDeniedException(AccessDeniedException e, HttpServletRequest request) {
+        SecurityEventLogger.accessDenied(request);
         HttpStatus status = HttpStatus.FORBIDDEN;
         return ResponseEntity.status(status).body(this.detailBuild(status, request.getRequestURL(), ERROR_FORBIDDEN));
     }
@@ -111,15 +115,18 @@ public class ExceptionControllerAdvice {
     @ExceptionHandler(AuthenticationException.class)
     @ResponseBody
     public ResponseEntity<ProblemDetail> handleAuthenticationException(AuthenticationException e, HttpServletRequest request) {
+        SecurityEventLogger.authenticationFailure(request, e);
         HttpStatus status = HttpStatus.UNAUTHORIZED;
         return ResponseEntity.status(status).body(this.detailBuild(status, request.getRequestURL(), ERROR_UNAUTHORIZED));
     }
 
     /**
-     * Client errors (malformed JSON, wrong parameter type) are 400, not 500. The parser message is not
-     * returned because it can echo the payload and reveal internal class names.
+     * Client errors (malformed JSON, wrong parameter type, constraint violated on a path or query parameter)
+     * are 400, not 500. The parser message is not returned because it can echo the payload and reveal
+     * internal class names.
      */
-    @ExceptionHandler({HttpMessageNotReadableException.class, MethodArgumentTypeMismatchException.class})
+    @ExceptionHandler({HttpMessageNotReadableException.class, MethodArgumentTypeMismatchException.class,
+        HandlerMethodValidationException.class, ConstraintViolationException.class})
     @ResponseBody
     public ResponseEntity<ProblemDetail> handleUnreadableRequest(Exception e, HttpServletRequest request) {
         logger.debug("Unreadable request at {} {}", request.getMethod(), request.getRequestURI(), e);

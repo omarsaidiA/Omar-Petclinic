@@ -14,6 +14,7 @@ import org.springframework.security.config.annotation.web.configurers.AbstractHt
 import org.springframework.security.config.annotation.web.configurers.HeadersConfigurer;
 import org.springframework.security.config.http.SessionCreationPolicy;
 import org.springframework.security.oauth2.server.resource.authentication.JwtAuthenticationConverter;
+import org.springframework.security.oauth2.server.resource.web.authentication.BearerTokenAuthenticationFilter;
 import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.security.web.header.writers.ReferrerPolicyHeaderWriter.ReferrerPolicy;
 import org.springframework.web.cors.CorsConfiguration;
@@ -59,8 +60,12 @@ public class SecurityConfig {
 
     @Bean
     @Order(2)
-    SecurityFilterChain apiFilterChain(HttpSecurity http, JwtAuthenticationConverter jwtAuthenticationConverter) throws Exception {
+    SecurityFilterChain apiFilterChain(HttpSecurity http, JwtAuthenticationConverter jwtAuthenticationConverter,
+                                       @Value("${petclinic.rate-limit.authenticated-per-minute:120}") long authenticatedPerMinute,
+                                       @Value("${petclinic.rate-limit.anonymous-per-minute:30}") long anonymousPerMinute) throws Exception {
         http
+            // Runs once the token is validated, so authenticated callers are limited per user
+            .addFilterAfter(new RateLimitFilter(authenticatedPerMinute, anonymousPerMinute), BearerTokenAuthenticationFilter.class)
             .authorizeHttpRequests(authz -> authz
                 // Only the health endpoint is public; any other actuator endpoint requires authentication
                 .requestMatchers(HttpMethod.GET, "/actuator/health", "/actuator/health/**").permitAll()

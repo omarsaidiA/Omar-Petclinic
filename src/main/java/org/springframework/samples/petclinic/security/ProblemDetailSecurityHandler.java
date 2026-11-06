@@ -23,6 +23,7 @@ public class ProblemDetailSecurityHandler implements AuthenticationEntryPoint, A
     @Override
     public void commence(HttpServletRequest request, HttpServletResponse response,
                          AuthenticationException authException) throws IOException {
+        SecurityEventLogger.authenticationFailure(request, authException);
         response.setHeader(HttpHeaders.WWW_AUTHENTICATE, "Bearer");
         write(response, HttpStatus.UNAUTHORIZED, "Authentication is required to access this resource");
     }
@@ -30,6 +31,7 @@ public class ProblemDetailSecurityHandler implements AuthenticationEntryPoint, A
     @Override
     public void handle(HttpServletRequest request, HttpServletResponse response,
                        AccessDeniedException accessDeniedException) throws IOException {
+        SecurityEventLogger.accessDenied(request);
         write(response, HttpStatus.FORBIDDEN, "You are not allowed to access this resource");
     }
 

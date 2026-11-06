@@ -52,7 +52,7 @@ class UserRestControllerV1Tests {
     void testCreateUserSuccess() throws Exception {
         User user = new User();
         user.setUsername("username");
-        user.setPassword("password");
+        user.setPassword("Str0ng-Passw0rd!");
         user.setEnabled(true);
         user.addRole("OWNER_ADMIN");
         ObjectMapper mapper = new ObjectMapper();
@@ -67,7 +67,7 @@ class UserRestControllerV1Tests {
     void testCreateUserError() throws Exception {
         User user = new User();
         user.setUsername(""); // set empty username to force 400 error
-        user.setPassword("password");
+        user.setPassword("Str0ng-Passw0rd!");
         user.setEnabled(true);
         ObjectMapper mapper = new ObjectMapper();
         String newVetAsJSON = mapper.writeValueAsString(userMapper.toUserDto(user));

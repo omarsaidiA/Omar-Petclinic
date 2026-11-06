@@ -108,6 +108,7 @@ paths:
           required: false
           schema:
             type: string
+            maxLength: 30
             example: Davis
       responses:
         200:
@@ -150,6 +151,7 @@ paths:
           required: false
           schema:
             type: string
+            maxLength: 30
             example: Davis
         - name: page
           in: query
@@ -2235,6 +2237,7 @@ components:
           title: Specialties
           description: The specialties of the vet.
           type: array
+          maxItems: 20
           items:
             $ref: '#/components/schemas/Specialty'
       required:
@@ -2351,11 +2354,13 @@ components:
           example: john.doe
         password:
           title: Password
-          description: The password
+          description: The password (12 to 72 characters; 72 bytes is the BCrypt input limit)
           type: string
-          maxLength: 80
-          minLength: 1
-          example: 1234abc
+          format: password
+          writeOnly: true
+          maxLength: 72
+          minLength: 12
+          example: Correct-Horse-42
         enabled:
           title: enabled
           description: Indicates if the user is enabled
@@ -2365,6 +2370,7 @@ components:
           title: Roles
           description: The roles of an user
           type: array
+          maxItems: 3
           items:
             $ref: '#/components/schemas/Role'
       required:
